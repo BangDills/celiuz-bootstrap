@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 # Celiuz/Hermes VPS real bootstrap
-# - Installs base runtime: curl/git/gpg/python/node22/npm/gh/9router/codex/opencode/Hermes
+# - Installs base runtime: curl/git/gpg/python/node22/npm/gh/VS Code/9router/codex/opencode/Hermes
 # - Retrieves latest encrypted Hermes backup from a direct URL, local file, Google Drive file id,
 #   or public Google Drive folder URL/id via gdown
 # - Decrypts and restores /root/.hermes, /root/.9router, and relevant systemd services
@@ -10,7 +10,7 @@ set -Eeuo pipefail
 #
 # Safe default: never stores passphrase unless you pass PASSPHRASE_FILE yourself.
 
-SCRIPT_VERSION="2026-06-18.1"
+SCRIPT_VERSION="2026-06-18.2"
 WORKDIR="${WORKDIR:-/root/hermes-bootstrap-work}"
 HERMES_HOME="${HERMES_HOME:-/root/.hermes}"
 NODE_MAJOR="${NODE_MAJOR:-22}"
@@ -95,6 +95,68 @@ install_ai_clis() {
   command -v codex >/dev/null && codex --version || true
   command -v opencode >/dev/null && opencode --version || true
   gh --version | head -1 || true
+}
+
+install_vscode_root_launcher() {
+  log "Installing Visual Studio Code and code-root launcher"
+
+  install -d -m 0755 /etc/apt/keyrings
+  if [[ ! -f /etc/apt/keyrings/packages.microsoft.gpg ]]; then
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+      | gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg
+    chmod 0644 /etc/apt/keyrings/packages.microsoft.gpg
+  fi
+
+  cat > /etc/apt/sources.list.d/vscode.list <<'EOF'
+deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+EOF
+
+  apt-get update
+  apt-get install -y code
+
+  cat > /usr/local/bin/code-root <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+REAL_CODE="/usr/bin/code"
+USER_DATA_DIR="/root/.vscode-root"
+
+if [[ ! -x "$REAL_CODE" ]]; then
+  echo "Error: $REAL_CODE not found or not executable" >&2
+  exit 127
+fi
+
+mkdir -p "$USER_DATA_DIR"
+
+has_no_sandbox=0
+has_user_data_dir=0
+for arg in "$@"; do
+  [[ "$arg" == "--no-sandbox" ]] && has_no_sandbox=1
+  [[ "$arg" == --user-data-dir* ]] && has_user_data_dir=1
+done
+
+args=()
+[[ "$has_no_sandbox" -eq 0 ]] && args+=("--no-sandbox")
+[[ "$has_user_data_dir" -eq 0 ]] && args+=("--user-data-dir=$USER_DATA_DIR")
+
+exec "$REAL_CODE" "${args[@]}" "$@"
+EOF
+  chmod 0755 /usr/local/bin/code-root
+
+  cat > /usr/share/applications/code-root.desktop <<'EOF'
+[Desktop Entry]
+Name=Visual Studio Code (Root)
+Comment=Open VS Code as root with isolated profile
+GenericName=Text Editor
+Exec=/usr/local/bin/code-root --new-window /root
+Icon=code
+Type=Application
+StartupNotify=true
+Categories=Utility;TextEditor;Development;IDE;
+EOF
+  chmod 0644 /usr/share/applications/code-root.desktop
+
+  code --version | head -3 || true
+  code-root --version | head -3 || true
 }
 
 install_hermes() {
@@ -322,6 +384,8 @@ verify_services() {
   printf 'codex: '; codex --version || true
   printf 'opencode: '; opencode --version || true
   printf 'gh: '; gh --version | head -1 || true
+  printf 'code: '; code --version | head -1 || true
+  printf 'code-root: '; code-root --version | head -1 || true
   printf 'hermes: '; hermes --version || true
 
   if systemctl is-active --quiet 9router.service; then
@@ -348,6 +412,7 @@ main() {
   install_base_packages
   install_node22
   install_ai_clis
+  install_vscode_root_launcher
   install_hermes
   obtain_backup
   verify_and_decrypt

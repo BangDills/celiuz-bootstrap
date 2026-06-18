@@ -17,25 +17,31 @@ File utama:
    - `9router`
    - `@openai/codex`
    - `opencode-ai`
-4. Install Hermes Agent kalau belum ada.
-5. Ambil encrypted backup terbaru dari salah satu sumber:
+4. Install Visual Studio Code dari repo Microsoft.
+5. Buat launcher root:
+   - command `code-root`
+   - desktop launcher `Visual Studio Code (Root)`
+   - profile terisolasi `/root/.vscode-root`
+   - otomatis pakai `--no-sandbox`
+6. Install Hermes Agent kalau belum ada.
+7. Ambil encrypted backup terbaru dari salah satu sumber:
    - `BACKUP_URL`
    - `BACKUP_FILE`
    - `BACKUP_DRIVE_FILE_ID`
    - `BACKUP_DRIVE_FOLDER_URL`
    - `BACKUP_DRIVE_FOLDER_ID`
-6. Decrypt backup GPG.
-7. Validasi archive tidak berisi path berbahaya.
-8. Restore:
+8. Decrypt backup GPG.
+9. Validasi archive tidak berisi path berbahaya.
+10. Restore:
    - `/root/.hermes`
    - `/root/.9router`
    - `/etc/systemd/system/9router.service`
    - `/etc/systemd/system/hermes-gateway.service`
-9. Perbaiki `9router.service` agar memakai binary npm terbaru (`/usr/local/bin/9router`).
-10. Start/enable service:
+11. Perbaiki `9router.service` agar memakai binary npm terbaru (`/usr/local/bin/9router`).
+12. Start/enable service:
     - `9router.service`
     - `hermes-gateway.service`
-11. Verifikasi versi CLI, 9Router health, status gateway, dan file memory Hermes.
+13. Verifikasi versi CLI, VS Code/code-root, 9Router health, status gateway, dan file memory Hermes.
 
 ## Cara pakai di VPS baru
 
@@ -120,6 +126,22 @@ Di akhir, pastikan terlihat:
 hermes-gateway.service active
 Bootstrap complete
 ```
+
+## VS Code root
+
+Bootstrap Hermes sekarang juga menginstall Visual Studio Code dan membuat launcher:
+
+```bash
+code-root
+```
+
+Gunakan dari terminal root atau menu desktop **Visual Studio Code (Root)**. Launcher ini otomatis menambahkan:
+
+```text
+--no-sandbox --user-data-dir=/root/.vscode-root
+```
+
+Jadi VS Code bisa langsung jalan sebagai root tanpa perlu mengetik flag panjang.
 
 ## Rollback dan keamanan
 
