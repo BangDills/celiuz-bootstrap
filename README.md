@@ -135,6 +135,42 @@ Script menyimpan rollback archive dan staging di sana. Setelah berhasil dan suda
 rm -rf /root/hermes-bootstrap-work
 ```
 
+## Bootstrap tambahan: XFCE + XRDP
+
+Kalau VPS baru juga perlu desktop remote via RDP, jalankan script ini:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BangDills/celiuz-bootstrap/main/xrdp-xfce-bootstrap.sh \
+  -o /root/xrdp-xfce-bootstrap.sh && \
+chmod 700 /root/xrdp-xfce-bootstrap.sh && \
+bash /root/xrdp-xfce-bootstrap.sh
+```
+
+Script ini melakukan versi aman dari command manual:
+
+```bash
+apt update
+apt install xfce4 xfce4-goodies dbus-x11 xrdp ufw -y
+systemctl enable xrdp
+echo "xfce4-session" > ~/.xsession
+systemctl restart xrdp
+ufw allow OpenSSH
+ufw allow 3389/tcp
+ufw --force enable
+```
+
+Catatan: script sengaja menjalankan `ufw allow OpenSSH` sebelum `ufw enable`, supaya koneksi SSH tidak terkunci.
+
+Optional:
+
+```bash
+# Batasi RDP hanya dari IP tertentu
+ALLOW_RDP_FROM=203.0.113.10 bash /root/xrdp-xfce-bootstrap.sh
+
+# Jangan ubah firewall
+ENABLE_UFW=false bash /root/xrdp-xfce-bootstrap.sh
+```
+
 ## Catatan penting
 
 - Agar auto-pick backup terbaru dari Google Drive mudah, sebaiknya folder Drive khusus backup hanya berisi file `hermes-backup-*.tar.gz.gpg`.
