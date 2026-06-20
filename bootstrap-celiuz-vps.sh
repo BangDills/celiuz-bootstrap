@@ -165,8 +165,9 @@ install_hermes() {
     hermes --version || true
     return
   fi
-  log "Installing Hermes Agent"
-  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+  log "Installing Hermes Agent runtime only (skip interactive setup; restored config will be used)"
+  curl -fsSL https://hermes-agent.nousresearch.com/install.sh \
+    | bash -s -- --skip-setup --non-interactive --hermes-home "$HERMES_HOME"
   export PATH="/usr/local/bin:/root/.local/bin:$PATH"
   command -v hermes >/dev/null 2>&1 || fail "Hermes command not found after install"
   hermes --version || true
